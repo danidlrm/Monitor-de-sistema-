@@ -8,3 +8,6 @@ Mtro. Iram Maximiliano Lopez Guerrero
 By: Dani D. | Santiago A. | Diego V.
 
 ![Cat Coding](./assets/Cat%20Coding%20Gif.gif)
+<p align="center">
+  <img src="./assets/Cat%20Coding%20Gif.gif" width="400">
+</p>
