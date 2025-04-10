@@ -1,0 +1,4 @@
+- alertas visuales: Que la barrita se ponga roja si CPU > 80%, amarilla si RAM está heavy, o que salga un mensajito.
+- logs en tiempo real
+- menu o interacción con teclas
+- que guarde snapshots
