@@ -12,6 +12,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
 	"github.com/shirou/gopsutil/v4/process"
@@ -79,11 +80,35 @@ func main() {
 	}
 }
 
+func dibujarTitulo(t tcell.Screen, x, y int) {
+	titulo := []string{
+
+		"MONITOR DE SISTEMA",
+		"",
+		"by: Daniela Davila | Santiago Avila | Diego Vitela ",
+		"",
+		"Este proyecto es un monitor del sistema en tiempo real escrito en Go, disenado para ejecutarse en la terminal con una interfaz visual tipo consola usando la biblioteca tcell.",
+		"Su proposito es ofrecer una vision clara y eficiente del rendimiento del sistema, mostrando el uso de CPU, memoria RAM, interfaces de red y los procesos más demandantes ordenados por consumo de recursos.",
+		"",
+		"",
+		"-> Presiona ESC para salir.",
+	}
+
+	for i, linea := range titulo {
+		dibujarTexto(t, x, y+i, linea, tcell.StyleDefault.Foreground(tcell.ColorWhite))
+	}
+}
+
 // Actualiza todos los datos en pantalla
 func actualizarPantalla(t tcell.Screen) {
 	t.Clear()
 	ancho, alto := t.Size()
 
+	// Dibuja el título
+	dibujarTitulo(t, 1, 40) // alineado a la izq.
+
+	memY := 20
+	dibujarTexto(t, 1, memY, "Información del sistema", tcell.StyleDefault.Foreground(tcell.ColorWhite))
 	memoria, _ := mem.VirtualMemory()
 	cpuUso, _ := cpu.Percent(0, false)
 	netDatos, _ := net.IOCounters(false)
@@ -109,6 +134,11 @@ func actualizarPantalla(t tcell.Screen) {
 	// Interfaces de Red
 	dibujarTexto(t, 1, 9, "Interfaces de Red:", tcell.StyleDefault.Foreground(tcell.ColorYellow))
 	interfacesInfo := obtenerInfoInterfacesRed()
+	maxInterfaces := 3
+	if len(interfacesInfo) < maxInterfaces {
+		maxInterfaces = len(interfacesInfo)
+	}
+
 	for i, info := range interfacesInfo {
 		if i > 3 {
 			break // Limitar a mostrar solo las primeras 3 interfaces
@@ -116,11 +146,20 @@ func actualizarPantalla(t tcell.Screen) {
 		dibujarTexto(t, 1, 10+i, info, tcell.StyleDefault.Foreground(tcell.ColorBlue))
 	}
 
+	// Dibujar uptime justo después de interfaces
+	lineaUptime := 11 + maxInterfaces
+	dibujarTexto(t, 1, lineaUptime, obtenerUptime(), tcell.StyleDefault.Foreground(tcell.ColorGray))
+
+	// Calcular la siguiente línea disponible para las tablas
+	lineaInicioTablas := lineaUptime + 2
+	altoTablas := alto - lineaInicioTablas - 2
+
 	// Procesos
 	procesos := obtenerProcesos()
-	dibujarTabla(t, 1, 15, ancho/2-1, alto-10, "+ RAM", ordenarPorRAM(procesos))
-	dibujarTabla(t, ancho/2+1, 15, ancho/2-2, alto-10, "+ CPU", ordenarPorCPU(procesos))
+	dibujarTabla(t, 1, 15, ancho/2-1, altoTablas, "+ RAM", ordenarPorRAM(procesos))
+	dibujarTabla(t, ancho/2+1, 15, ancho/2-2, altoTablas, "+ CPU", ordenarPorCPU(procesos))
 	t.Show()
+
 }
 
 // Dibuja una barra visual de porcentaje
@@ -128,11 +167,20 @@ func dibujarBarra(t tcell.Screen, x, y, ancho int, titulo string, valor float64,
 	llenado := int(float64(ancho-2) * valor / 100)
 	dibujarTexto(t, x, y, titulo+": "+texto, tcell.StyleDefault.Foreground(tcell.ColorYellow))
 	t.SetContent(x, y+1, '[', nil, tcell.StyleDefault)
+	var color tcell.Color
+	switch {
+	case valor > 80:
+		color = tcell.ColorRed
+	case valor > 50:
+		color = tcell.ColorYellow
+	default:
+		color = tcell.ColorGreen
+	}
 	for i := 0; i < ancho-2; i++ {
 		simbolo := ' '
 		estilo := tcell.StyleDefault.Background(tcell.ColorDarkGray)
 		if i < llenado {
-			estilo = tcell.StyleDefault.Background(tcell.ColorGreen)
+			estilo = tcell.StyleDefault.Background(color)
 		}
 		t.SetContent(x+1+i, y+1, simbolo, nil, estilo)
 	}
@@ -236,7 +284,9 @@ func obtenerInfoInterfacesRed() []string {
 		// Mostrar solo interfaces activas (se omite net.FlagUp)
 		for _, stat := range netStats {
 			if stat.Name == iface.Name {
+
 				ifaceInfo = fmt.Sprintf("%s - Recibido: %.2fMB, Enviado: %.2fMB, Paquetes: %d recibidos, %d enviados",
+
 					iface.Name,
 					float64(stat.BytesRecv)/1e6,
 					float64(stat.BytesSent)/1e6,
@@ -254,4 +304,20 @@ func obtenerInfoInterfacesRed() []string {
 		}
 	}
 	return info
+}
+
+// timepo activo en sistema
+func obtenerUptime() string {
+	uptime, err := host.Uptime()
+	if err != nil {
+		return "Tiempo activo: No disponible"
+	}
+	duracion := time.Duration(uptime) * time.Second
+
+	dias := int(duracion.Hours()) / 24
+	horas := int(duracion.Hours()) % 24
+	minutos := int(duracion.Minutes()) % 60
+	segundos := int(duracion.Seconds()) % 60
+
+	return fmt.Sprintf("Tiempo activo: %dd %02dh %02dm %02ds", dias, horas, minutos, segundos)
 }
