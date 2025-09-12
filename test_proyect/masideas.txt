@@ -1,0 +1,34 @@
+FUNCONES
+
+1. Temperatura del sistema
+Muestra la temperatura de CPU o GPU si tu sistema lo permite (gopsutil/host o usando bindings a smc en macOS).
+
+2. Velocidad de red en tiempo real
+En lugar de solo mostrar tráfico total, calcula cuántos KB/s está subiendo y bajando la máquina cada segundo.
+
+3. Top procesos por disco
+Usa gopsutil/disk para mostrar procesos que más están leyendo o escribiendo en disco.
+
+4. Carga del sistema (load average)
+Valores clásicos en Unix: carga en 1, 5 y 15 minutos (host.LoadAvg()).
+
+DISEÑO
+1. Modo oscuro y claro
+Permitir cambiar esquema de colores con una tecla.
+
+2. Animaciones sutiles
+Usa pequeñas animaciones en barras (ej. parpadeo suave si el uso es alto).
+
+3. Separadores y bordes visuales
+Agrega líneas para separar RAM/CPU/RED, mejora legibilidad.
+
+
+OTROS:
+
+1. Resumen de estado general
+"Sistema saludable" o "Uso crítico", basado en umbrales.
+2. Exportar métricas a CSV o JSON
+Guardar snapshot del estado actual para análisis posterior.
+3. Búsqueda de procesos
+Permitir al usuario escribir un nombre y filtrar procesos por él.
+
